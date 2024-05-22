@@ -1,12 +1,14 @@
+use std::str::from_utf8;
+
 use schnorrkel::{
     context::signing_context,
-    vrf::{VRFInOut, VRFProof},
+    vrf::VRFProof,
     Keypair, PublicKey, SecretKey,
 };
 
 pub struct Player {
     key_pair: Keypair,
-    hand: Option<VRFInOut>,
+    hand: Option<u32>,
 }
 
 impl Player {
@@ -29,7 +31,10 @@ impl Player {
         let ctx = signing_context(b"yo!");
         let (output, signature, _) = self.key_pair.vrf_sign(ctx.bytes(input));
 
-        self.hand = Some(output);
+        let output_byte = output.as_output_bytes();
+        let hand_index = from_utf8(output_byte).unwrap().parse::<u32>().unwrap() % 13;
+
+        self.hand = Some(hand_index);
 
         signature
     }
