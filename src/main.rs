@@ -1,4 +1,8 @@
+use player::Player;
+
 pub mod player;
+
+const PLAYER_COUNT: usize = 4;
 
 /**
  * player.rs
@@ -12,4 +16,17 @@ pub mod player;
  * - Players know their own VRF output (i.e. the cards in their hand),
  * but other players don't until the game calls for them to reveal their card, by publishing a VRF output.
  */
-fn main() {}
+fn main() {
+    let players = (0..PLAYER_COUNT)
+        .into_iter()
+        .map(|_| Player::new())
+        .collect::<Vec<_>>();
+
+    loop {
+        // game
+        //
+        // deal
+        //
+        // bid
+    }
+}

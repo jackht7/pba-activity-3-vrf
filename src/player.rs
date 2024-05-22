@@ -1,26 +1,21 @@
-use schnorrkel::{PublicKey, SecretKey};
+use schnorrkel::{Keypair, PublicKey, SecretKey};
 
-pub struct Player {
-    key_private: SecretKey,
-    key_public: PublicKey,
-}
+pub struct Player(Keypair);
 
 impl Player {
     pub fn new() -> Self {
-        let key_private = SecretKey::generate();
-        let key_public = PublicKey::from(key_private.clone());
+        Self(Keypair::generate())
+    }
 
-        Self {
-            key_private,
-            key_public,
-        }
+    pub fn keypair(&self) -> &Keypair {
+        &self.0
     }
 
     pub fn key_private(&self) -> &SecretKey {
-        &self.key_private
+        &self.0.secret
     }
 
     pub fn key_public(&self) -> &PublicKey {
-        &self.key_public
+        &self.0.public
     }
 }
