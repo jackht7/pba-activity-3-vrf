@@ -1,13 +1,12 @@
 use std::cmp::Ordering;
 
-use lazy_static::lazy_static;
 use player::Player;
 use rand::Rng;
-use schnorrkel::signing_context;
 
 pub mod player;
 
 const PLAYER_COUNT: usize = 4;
+const DEFAULT_BALANCE: u32 = 100;
 
 /**
  * player.rs
@@ -22,38 +21,74 @@ const PLAYER_COUNT: usize = 4;
  * but other players don't until the game calls for them to reveal their card, by publishing a VRF output.
  */
 fn main() {
-    let mut players = (0..PLAYER_COUNT)
+    let players = (0..PLAYER_COUNT)
         .into_iter()
         .map(|_| Player::new())
         .collect::<Vec<_>>();
 
+    let mut balances = (0..PLAYER_COUNT)
+        .into_iter()
+        .map(|_| DEFAULT_BALANCE)
+        .collect::<Vec<_>>();
+
+    let mut rng = rand::thread_rng();
+
     loop {
-        // draws cards for each player
-        let mut rng = rand::thread_rng();
-        players.iter_mut().for_each(|player| {
-            let seed = rng.gen::<u32>().to_be_bytes();
-            player.draw(&seed);
-        });
-
-        let bets: Vec<_> = players
+        // Each player locks a random bet in advance
+        let bets = balances
             .iter()
-            .map(|player| rng.gen_range(0..player.balance))
-            .collect();
+            .map(|balance| rng.gen_range(0..*balance))
+            .collect::<Vec<_>>();
 
-        // find the winner
-        // TODO: we don't need to do this if we save the highest generated card
-        let winners = players
+        // Each player draws a verifiably random card
+        let (cards, proofs): (Vec<_>, Vec<_>) = players
             .iter()
-            .fold(Vec::<Player>::default(), |mut winners, player| {
-                let winner = winners.first().map(|winner| winner.hand).unwrap_or(Some(0));
-                match player.hand.cmp(&winner) {
-                    Ordering::Less => winners,
-                    Ordering::Equal => {
-                        winners.push(player.clone());
-                        winners
+            .map(|player| {
+                let seed: u32 = rng.gen();
+                player.draw(&seed.to_be_bytes())
+            })
+            .unzip();
+
+        // TODO: verify
+
+        // Sccumulates winners and losers, taking ties into consideration.
+        // Players are identified by index.
+        let (winners, loosers) = cards.into_iter().enumerate().fold(
+            (
+                Vec::<(usize, u32)>::default(),
+                Vec::<(usize, u32)>::default(),
+            ),
+            |(mut winners, mut loosers), (i, player_hand)| {
+                let winner = winners.first().cloned().unwrap_or_default();
+                match player_hand.cmp(&winner.1) {
+                    Ordering::Less => {
+                        loosers.push((i, player_hand));
+                        (winners, loosers)
                     }
-                    Ordering::Greater => vec![player.clone()],
+                    Ordering::Equal => {
+                        winners.push((i, player_hand));
+                        (winners, loosers)
+                    }
+                    Ordering::Greater => {
+                        loosers.append(&mut winners);
+                        (winners, vec![])
+                    }
                 }
-            });
+            },
+        );
+
+        // Determines the wins per winner, deducing losses from each looser balance.
+        let wins: u32 = loosers.into_iter().fold(0, |wins, (i, _)| {
+            balances[i] -= bets[i];
+            wins + bets[i]
+        }) / winners.len() as u32;
+
+        // Adds wins to each winner's balance.
+        winners.into_iter().for_each(|(i, _)| balances[i] += wins);
+
+        // check for end of game
+        if balances.iter().min().cloned().unwrap_or_default() == 0 {
+            break;
+        }
     }
 }
