@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 
+use itertools::{multizip, MultiUnzip};
 use player::Player;
 use rand::Rng;
 
@@ -41,15 +42,36 @@ fn main() {
             .collect::<Vec<_>>();
 
         // Each player draws a verifiably random card
-        let (cards, proofs): (Vec<_>, Vec<_>) = players
+        let (cards, transcripts, out, proofs): (Vec<_>, Vec<_>, Vec<_>, Vec<_>) = players
             .iter()
             .map(|player| {
                 let seed: u32 = rng.gen();
                 player.draw(&seed.to_be_bytes())
             })
-            .unzip();
+            .multiunzip();
+        let zipped = multizip((transcripts, out, proofs));
 
-        // TODO: verify
+        let verify = (0..PLAYER_COUNT)
+            .into_iter()
+            .map(|player| {
+                zipped
+                    .clone()
+                    .enumerate()
+                    .filter(|(i, (_, _, _))| *i != player)
+                    .map(|(i, (transcipt, out, proof))| {
+                        players[i]
+                            .keys()
+                            .public
+                            .vrf_verify(transcipt, &out.to_preout(), &proof)
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .is_ok();
+
+        if verify == false {
+            return;
+        }
 
         // Sccumulates winners and losers, taking ties into consideration.
         // Players are identified by index.
