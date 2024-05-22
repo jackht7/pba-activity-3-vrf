@@ -178,6 +178,7 @@ name = "pba-activity-3-vrf"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
+ "rand",
  "schnorrkel",
 ]
 

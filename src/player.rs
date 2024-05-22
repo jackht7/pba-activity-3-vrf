@@ -4,10 +4,11 @@ use schnorrkel::{context::signing_context, vrf::VRFProof, Keypair, PublicKey, Se
 
 const DEFAULT_BALANCE: u32 = 100;
 
+#[derive(Clone)]
 pub struct Player {
     key_pair: Keypair,
-    hand: Option<u32>,
-    balance: u32,
+    pub hand: Option<u32>,
+    pub balance: u32,
 }
 
 impl Player {
@@ -28,7 +29,7 @@ impl Player {
     }
 
     pub fn draw(&mut self, input: &[u8]) -> VRFProof {
-        let ctx = signing_context(b"yo!");
+        let ctx = signing_context(b"Drawing card");
         let (output, signature, _) = self.key_pair.vrf_sign(ctx.bytes(input));
 
         let output_byte = output.as_output_bytes();

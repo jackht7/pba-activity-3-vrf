@@ -1,44 +1,13 @@
+use std::cmp::Ordering;
+
 use lazy_static::lazy_static;
 use player::Player;
+use rand::Rng;
+use schnorrkel::signing_context;
 
 pub mod player;
 
 const PLAYER_COUNT: usize = 4;
-
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-enum Card {
-    Two,
-    Three,
-    Four,
-    Five,
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Ten,
-    Jack,
-    Queen,
-    King,
-    Ace,
-}
-
-lazy_static! {
-    static ref CARDS: Vec<Card> = vec![
-        Card::Two,
-        Card::Three,
-        Card::Four,
-        Card::Five,
-        Card::Six,
-        Card::Seven,
-        Card::Eight,
-        Card::Nine,
-        Card::Ten,
-        Card::Jack,
-        Card::Queen,
-        Card::King,
-        Card::Ace,
-    ];
-}
 
 /**
  * player.rs
@@ -53,16 +22,38 @@ lazy_static! {
  * but other players don't until the game calls for them to reveal their card, by publishing a VRF output.
  */
 fn main() {
-    let players = (0..PLAYER_COUNT)
+    let mut players = (0..PLAYER_COUNT)
         .into_iter()
         .map(|_| Player::new())
         .collect::<Vec<_>>();
 
     loop {
-        // game
-        //
-        // deal
-        //
-        // bid
+        // draws cards for each player
+        let mut rng = rand::thread_rng();
+        players.iter_mut().for_each(|player| {
+            let seed = rng.gen::<u32>().to_be_bytes();
+            player.draw(&seed);
+        });
+
+        let bets: Vec<_> = players
+            .iter()
+            .map(|player| rng.gen_range(0..player.balance))
+            .collect();
+
+        // find the winner
+        // TODO: we don't need to do this if we save the highest generated card
+        let winners = players
+            .iter()
+            .fold(Vec::<Player>::default(), |mut winners, player| {
+                let winner = winners.first().map(|winner| winner.hand).unwrap_or(Some(0));
+                match player.hand.cmp(&winner) {
+                    Ordering::Less => winners,
+                    Ordering::Equal => {
+                        winners.push(player.clone());
+                        winners
+                    }
+                    Ordering::Greater => vec![player.clone()],
+                }
+            });
     }
 }
