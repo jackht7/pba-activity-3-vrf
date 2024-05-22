@@ -35,6 +35,15 @@ fn main() {
     let mut rng = rand::thread_rng();
 
     loop {
+        for i in 0..PLAYER_COUNT {
+            println!(
+                "{:?} - player: {:?} - balance: {:?}",
+                i,
+                players[i].keys().public,
+                balances[i]
+            );
+        }
+
         // Each player locks a random bet in advance
         let bets = balances
             .iter()
@@ -42,13 +51,14 @@ fn main() {
             .collect::<Vec<_>>();
 
         // Each player draws a verifiably random card
-        let (cards, transcripts, out, proofs): (Vec<_>, Vec<_>, Vec<_>, Vec<_>) = players
-            .iter()
-            .map(|player| {
-                let seed: u32 = rng.gen();
-                player.draw(&seed.to_be_bytes())
-            })
-            .multiunzip();
+        let (cards, transcripts, out, proofs): (Vec<_>, Vec<_>, Vec<_>, Vec<_>) =
+            players
+                .iter()
+                .map(|player| {
+                    let seed: u32 = rng.gen();
+                    player.draw(&seed.to_be_bytes())
+                })
+                .multiunzip();
         let zipped = multizip((transcripts, out, proofs));
 
         // Checks each vfr
@@ -76,29 +86,30 @@ fn main() {
 
         // Sccumulates winners and losers, taking ties into consideration.
         // Players are identified by index.
-        let (winners, loosers) = cards.into_iter().enumerate().fold(
-            (
-                Vec::<(usize, u32)>::default(),
-                Vec::<(usize, u32)>::default(),
-            ),
-            |(mut winners, mut loosers), (i, player_hand)| {
-                let winner = winners.first().cloned().unwrap_or_default();
-                match player_hand.cmp(&winner.1) {
-                    Ordering::Less => {
-                        loosers.push((i, player_hand));
-                        (winners, loosers)
+        let (winners, loosers) =
+            cards.into_iter().enumerate().fold(
+                (
+                    Vec::<(usize, u32)>::default(),
+                    Vec::<(usize, u32)>::default(),
+                ),
+                |(mut winners, mut loosers), (i, player_hand)| {
+                    let winner = winners.first().cloned().unwrap_or_default();
+                    match player_hand.cmp(&winner.1) {
+                        Ordering::Less => {
+                            loosers.push((i, player_hand));
+                            (winners, loosers)
+                        }
+                        Ordering::Equal => {
+                            winners.push((i, player_hand));
+                            (winners, loosers)
+                        }
+                        Ordering::Greater => {
+                            loosers.append(&mut winners);
+                            (vec![(i, player_hand)], loosers)
+                        }
                     }
-                    Ordering::Equal => {
-                        winners.push((i, player_hand));
-                        (winners, loosers)
-                    }
-                    Ordering::Greater => {
-                        loosers.append(&mut winners);
-                        (vec![(i, player_hand)], loosers)
-                    }
-                }
-            },
-        );
+                },
+            );
 
         // Determines the wins per winner, deducing losses from each looser balance.
         let wins: u32 = loosers.into_iter().fold(0, |wins, (i, _)| {
