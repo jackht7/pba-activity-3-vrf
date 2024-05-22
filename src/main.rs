@@ -38,7 +38,7 @@ fn main() {
         // Each player locks a random bet in advance
         let bets = balances
             .iter()
-            .map(|balance| rng.gen_range(0..*balance))
+            .map(|balance| rng.gen_range(0..*balance + 1))
             .collect::<Vec<_>>();
 
         // Each player draws a verifiably random card
@@ -93,7 +93,7 @@ fn main() {
                     }
                     Ordering::Greater => {
                         loosers.append(&mut winners);
-                        (winners, vec![])
+                        (vec![(i, player_hand)], loosers)
                     }
                 }
             },
