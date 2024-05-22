@@ -1,8 +1,44 @@
+use lazy_static::lazy_static;
 use player::Player;
 
 pub mod player;
 
 const PLAYER_COUNT: usize = 4;
+
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+enum Card {
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Ten,
+    Jack,
+    Queen,
+    King,
+    Ace,
+}
+
+lazy_static! {
+    static ref CARDS: Vec<Card> = vec![
+        Card::Two,
+        Card::Three,
+        Card::Four,
+        Card::Five,
+        Card::Six,
+        Card::Seven,
+        Card::Eight,
+        Card::Nine,
+        Card::Ten,
+        Card::Jack,
+        Card::Queen,
+        Card::King,
+        Card::Ace,
+    ];
+}
 
 /**
  * player.rs
