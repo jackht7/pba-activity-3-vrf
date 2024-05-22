@@ -51,6 +51,7 @@ fn main() {
             .multiunzip();
         let zipped = multizip((transcripts, out, proofs));
 
+        // Checks each vfr
         let verify = (0..PLAYER_COUNT)
             .into_iter()
             .map(|player| {
