@@ -1,3 +1,5 @@
+pub mod player;
+
 /**
  * player.rs
  * - Players need to have keypairs - their own secret and public keys.
@@ -10,5 +12,4 @@
  * - Players know their own VRF output (i.e. the cards in their hand),
  * but other players don't until the game calls for them to reveal their card, by publishing a VRF output.
  */
-
 fn main() {}
