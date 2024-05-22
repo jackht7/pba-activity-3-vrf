@@ -1,6 +1,6 @@
 use std::str::from_utf8;
 
-use schnorrkel::{context::signing_context, vrf::VRFProof, Keypair, PublicKey, SecretKey};
+use schnorrkel::{context::signing_context, errors::SignatureError, Keypair, PublicKey, SecretKey};
 
 #[derive(Clone)]
 pub struct Player(Keypair);
@@ -19,4 +19,6 @@ impl Player {
 
         (card, signature)
     }
+
+    pub fn validate(&self) {}
 }
