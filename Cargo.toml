@@ -1,0 +1,7 @@
+[package]
+name = "pba-activity-3-vrf"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+schnorrkel = "0.11.4"
