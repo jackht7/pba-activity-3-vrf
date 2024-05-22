@@ -1,14 +1,13 @@
 use std::str::from_utf8;
 
-use schnorrkel::{
-    context::signing_context,
-    vrf::VRFProof,
-    Keypair, PublicKey, SecretKey,
-};
+use schnorrkel::{context::signing_context, vrf::VRFProof, Keypair, PublicKey, SecretKey};
+
+const DEFAULT_BALANCE: u32 = 100;
 
 pub struct Player {
     key_pair: Keypair,
     hand: Option<u32>,
+    balance: u32,
 }
 
 impl Player {
@@ -16,6 +15,7 @@ impl Player {
         Self {
             key_pair: Keypair::generate(),
             hand: None,
+            balance: DEFAULT_BALANCE,
         }
     }
 
